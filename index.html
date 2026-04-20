@@ -1,0 +1,179 @@
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>彩票分析工具</title>
+
+<style>
+body {
+    font-family: -apple-system;
+    padding: 15px;
+    background: #f5f5f5;
+}
+h2 { margin-top:20px; }
+.card {
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+}
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    background: #007aff;
+    color: white;
+    margin: 5px 0;
+    width: 100%;
+    font-size: 16px;
+}
+.result {
+    margin-top: 10px;
+    font-weight: bold;
+}
+.badge {
+    display: inline-block;
+    margin: 3px;
+    padding: 6px 10px;
+    border-radius: 20px;
+    background: #eee;
+}
+.hot { background: #ff4d4f; color: white; }
+.cold { background: #1890ff; color: white; }
+</style>
+</head>
+
+<body>
+
+<h1>🎯 彩票分析工具</h1>
+
+<div class="card">
+<h2>双色球</h2>
+<button onclick="genSSQ()">随机选号</button>
+<button onclick="analyzeSSQ()">分析历史</button>
+<div class="result" id="ssq_result"></div>
+<div id="ssq_analysis"></div>
+</div>
+
+<div class="card">
+<h2>大乐透</h2>
+<button onclick="genDLT()">随机选号</button>
+<button onclick="analyzeDLT()">分析历史</button>
+<div class="result" id="dlt_result"></div>
+<div id="dlt_analysis"></div>
+</div>
+
+<div class="card">
+<h2>📥 导入历史数据（JSON）</h2>
+<input type="file" onchange="importData(event)">
+</div>
+
+<script>
+// ===== 工具函数 =====
+function randomSet(count, max) {
+    let set = new Set();
+    while (set.size < count) {
+        set.add(Math.floor(Math.random() * max) + 1);
+    }
+    return Array.from(set).sort((a,b)=>a-b);
+}
+
+// ===== 默认数据 =====
+let ssq_history = JSON.parse(localStorage.getItem("ssq")) || [];
+let dlt_history = JSON.parse(localStorage.getItem("dlt")) || [];
+
+// ===== 双色球 =====
+function genSSQ() {
+    let red = randomSet(6,33);
+    let blue = Math.floor(Math.random()*16)+1;
+
+    document.getElementById("ssq_result").innerText =
+        "红球: "+red.join(", ")+" | 蓝球: "+blue;
+
+    ssq_history.push({red, blue});
+    localStorage.setItem("ssq", JSON.stringify(ssq_history));
+}
+
+function analyzeSSQ() {
+    let freq = Array(34).fill(0);
+
+    ssq_history.forEach(item=>{
+        item.red.forEach(n=>freq[n]++);
+    });
+
+    let sorted = freq.map((v,i)=>({n:i,v}))
+                     .slice(1)
+                     .sort((a,b)=>b.v-a.v);
+
+    let hot = sorted.slice(0,5);
+    let cold = sorted.slice(-5);
+
+    document.getElementById("ssq_analysis").innerHTML =
+        "<p>🔥 热号:</p>" +
+        hot.map(x=>`<span class="badge hot">${x.n}</span>`).join("") +
+        "<p>❄️ 冷号:</p>" +
+        cold.map(x=>`<span class="badge cold">${x.n}</span>`).join("");
+}
+
+// ===== 大乐透 =====
+function genDLT() {
+    let front = randomSet(5,35);
+    let back = randomSet(2,12);
+
+    document.getElementById("dlt_result").innerText =
+        "前区: "+front.join(", ")+" | 后区: "+back.join(", ");
+
+    dlt_history.push({front, back});
+    localStorage.setItem("dlt", JSON.stringify(dlt_history));
+}
+
+function analyzeDLT() {
+    let freq = Array(36).fill(0);
+
+    dlt_history.forEach(item=>{
+        item.front.forEach(n=>freq[n]++);
+    });
+
+    let sorted = freq.map((v,i)=>({n:i,v}))
+                     .slice(1)
+                     .sort((a,b)=>b.v-a.v);
+
+    let hot = sorted.slice(0,5);
+    let cold = sorted.slice(-5);
+
+    document.getElementById("dlt_analysis").innerHTML =
+        "<p>🔥 热号:</p>" +
+        hot.map(x=>`<span class="badge hot">${x.n}</span>`).join("") +
+        "<p>❄️ 冷号:</p>" +
+        cold.map(x=>`<span class="badge cold">${x.n}</span>`).join("");
+}
+
+// ===== 导入数据 =====
+function importData(e) {
+    let file = e.target.files[0];
+    let reader = new FileReader();
+
+    reader.onload = function() {
+        let data = JSON.parse(reader.result);
+
+        if (data.ssq) {
+            ssq_history = data.ssq;
+            localStorage.setItem("ssq", JSON.stringify(ssq_history));
+        }
+        if (data.dlt) {
+            dlt_history = data.dlt;
+            localStorage.setItem("dlt", JSON.stringify(dlt_history));
+        }
+
+        alert("导入成功！");
+    };
+
+    reader.readAsText(file);
+}
+</script>
+
+</body>
+</html>
+```
